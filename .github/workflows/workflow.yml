@@ -1,0 +1,41 @@
+name: workflow.yml
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/project/**"
+      - "packages/**"
+      - 'pnpm-lock.yaml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Set Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        # 모노레포의 특정 앱만 빌드 (출력 경로가 apps/web/dist라고 가정)
+        run: pnpm --filter ./apps/project build
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: S_KZq6yVZIxowvPeXvOUbLfnGNCn2kTN33LlxH8e
+          accountId: jhjeon@0to1partners.com
+          command: pages deploy apps/project/dist --project-name=my-monorepo-web
