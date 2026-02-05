@@ -38,4 +38,5 @@ jobs:
         with:
           apiToken: S_KZq6yVZIxowvPeXvOUbLfnGNCn2kTN33LlxH8e
           accountId: jhjeon@0to1partners.com
+          packageManager: pnpm
           command: pages deploy apps/project/dist --project-name=my-monorepo-web
