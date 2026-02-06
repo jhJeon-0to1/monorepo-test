@@ -37,6 +37,6 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: S_KZq6yVZIxowvPeXvOUbLfnGNCn2kTN33LlxH8e
-          accountId: jhjeon@0to1partners.com
+          accountId: 97f7cfcd2a80803fd63e1434b9e58ea1
           packageManager: pnpm
-          command: pages deploy apps/project/dist --project-name=my-monorepo-web
+          command: pages deploy apps/project/dist --project-name=test
