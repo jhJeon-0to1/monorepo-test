@@ -6,7 +6,8 @@
 
 - 앱 코드는 named export만 사용합니다.
 - API 함수는 `@repo/core/api/*`에서 직접 import 합니다.
-- `@repo/core-next`는 Next.js 전용 기능만 제공합니다.
+- `@repo/core-react`는 React 클라이언트 공통 기능을 제공합니다.
+- `@repo/core-next`는 Next.js 전용 기능과 `@repo/core-react` 재export를 제공합니다.
 - `ui` 패키지는 별도 디자인 시스템으로 보고, fetch/error/core-next/eslint 정리와 분리해서 유지합니다.
 
 ## 전제
@@ -22,7 +23,8 @@
 - `apps/next`: Next.js 예제 앱
 - `apps/project`: Vite 예제 앱
 - `packages/core`: 프레임워크 비의존 fetch, request, error, core API
-- `packages/core-next`: Next.js 전용 bootstrap, auth wrapper
+- `packages/core-react`: React Query provider, query client, client auth wrapper
+- `packages/core-next`: Next.js 전용 bootstrap, server auth wrapper, `core-react` facade
 - `packages/ui`: 공용 UI 패키지
 - `packages/eslint-config`: 공용 ESLint 설정
 - `packages/typescript-config`: 공용 TypeScript 설정
@@ -82,27 +84,47 @@ import { testFetch } from "@repo/core/api/test";
 
 역할:
 
-- Next.js 환경에서 필요한 부가 기능만 제공
-- `@repo/core` API를 다시 pass-through 하지 않음
+- Next.js 환경에서 필요한 부가 기능 제공
+- `@repo/core-react`를 재export해서 Next 앱에서 한 패키지로 쓰기 쉽게 구성
+- `@repo/core` API를 다시 pass-through 하지는 않음
 
 공개 경로:
 
+- `@repo/core-next`
 - `@repo/core-next/bootstrap`
 - `@repo/core-next/server-auth`
 - `@repo/core-next/client-auth`
 
 이 패키지에는 API 함수 자체를 두지 않습니다. API 함수는 항상 `@repo/core/api/*`에서 직접 가져옵니다.
 
+### `@repo/core-react`
+
+역할:
+
+- React Query `QueryClient` 생성
+- 공용 React provider
+- 조합형 app providers
+- query hydration helper
+- 클라이언트 auth wrapper
+- query key factory
+- 클라이언트 query 에러 핸들러
+
+공개 경로:
+
+- `@repo/core-react`
+
 ## 사용법
 
 ### 1. 앱 초기화
 
 Next.js에서는 루트 레이아웃에 `CoreBootstrap`을 한 번만 둡니다.
+클라이언트 provider에서 함수 prop을 다뤄야 하면 `app/providers.tsx` 같은 client component로 분리합니다.
 
 ```tsx
 import "./globals.css";
 
 import { CoreBootstrap } from "@repo/core-next/bootstrap";
+import { Providers } from "./providers";
 
 const SITE_ID = "a";
 
@@ -115,9 +137,34 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <CoreBootstrap siteId={SITE_ID} />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
+  );
+}
+```
+
+```tsx
+"use client";
+
+import type { ReactNode } from "react";
+
+import {
+  AppProviders,
+  createClientQueryErrorHandler,
+} from "@repo/core-next";
+
+const handleClientQueryError = createClientQueryErrorHandler({
+  onUnauthorized: () => {
+    window.location.href = "/login";
+  },
+});
+
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <AppProviders onGlobalError={handleClientQueryError}>
+      {children}
+    </AppProviders>
   );
 }
 ```
@@ -207,6 +254,74 @@ const data = await authTestFetch();
 - `fn(id, options?)`
 - `fn(endpoint, options?)`
 
+### 5. React Query provider와 hydration
+
+`@repo/core-react`는 템플릿 기준으로 query infra를 패키지로 올려둔 구조입니다.
+
+제공 항목:
+
+- `makeCoreQueryClient()`
+- `getCoreQueryClient()`
+- `CoreReactProvider`
+- `AppProviders`
+- `CoreQueryHydration`
+- `createQueryKeys()`
+- `createClientQueryErrorHandler()`
+
+기본 정책:
+
+- browser에서는 singleton `QueryClient` 사용
+- server에서는 호출마다 새 `QueryClient` 생성
+- query/mutation 전역 에러 핸들러 주입 가능
+- 개발 환경에서는 React Query Devtools 활성화
+
+예시:
+
+```tsx
+import { AppProviders } from "@repo/core-next";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AppProviders
+      defaultOptions={{
+        queries: {
+          staleTime: 60_000,
+          retry: 0,
+        },
+      }}
+    >
+      {children}
+    </AppProviders>
+  );
+}
+```
+
+서버 prefetch가 필요하면:
+
+```tsx
+import { CoreQueryHydration } from "@repo/core-next";
+
+export default async function Page() {
+  return (
+    <CoreQueryHydration
+      prefetch={async (queryClient) => {
+        // await queryClient.prefetchQuery(...)
+      }}
+    >
+      <div />
+    </CoreQueryHydration>
+  );
+}
+```
+
+query key는 이렇게 만들면 됩니다.
+
+```ts
+import { createQueryKeys } from "@repo/core-next";
+
+export const testQueryKeys = createQueryKeys("test");
+```
+
 ## 왜 이렇게 나눴는가
 
 ### named export 유지
@@ -229,9 +344,11 @@ packages/core/src/api/some-domain.ts
 
 추가로 `index.ts`나 `core-next/server.ts` 같은 파일을 계속 수정하지 않아도 됩니다.
 
-### `core-next` 역할 축소
+### `core-react`와 `core-next` 분리
 
-`@repo/core-next`는 API 재수출 레이어가 아니라 Next.js 전용 헬퍼 레이어로 유지합니다.
+- `@repo/core-react`는 React 런타임 공통 계층입니다.
+- `@repo/core-next`는 Next 앱에서 바로 쓰기 쉽게 `core-react`를 재export합니다.
+- 서버 전용 로직은 `@repo/core-next/server-auth`처럼 subpath로 분리합니다.
 
 ## 주의사항
 
@@ -297,6 +414,7 @@ const data = await testFetch();
 ## 정리
 
 - API 함수는 `@repo/core/api/*`에서 직접 import
-- Next.js 전용 기능은 `@repo/core-next`에서만 제공
+- React 공통 기능은 `@repo/core-react`
+- Next.js용 facade는 `@repo/core-next`
 - `CoreBootstrap`은 현재 싱글 설정 전제에서 사용
 - 멀티테넌트 단일 앱 요구가 생기기 전까지는 지금 구조를 유지
