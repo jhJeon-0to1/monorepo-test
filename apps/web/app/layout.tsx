@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import "./globals.css";
-import { CoreInitializer } from "@repo/core-next/client";
-import { api } from "@repo/core-next/server";
+
+import { CoreBootstrap } from "@repo/core-next/bootstrap";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -9,8 +9,6 @@ export const metadata: Metadata = {
 };
 
 const SITE_ID = "a";
-
-api.initCore(SITE_ID);
 
 export default function RootLayout({
   children,
@@ -20,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <CoreInitializer siteId={SITE_ID} />
+        <CoreBootstrap siteId={SITE_ID} />
         {children}
       </body>
     </html>

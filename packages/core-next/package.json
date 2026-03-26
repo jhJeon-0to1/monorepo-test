@@ -4,6 +4,18 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./bootstrap": {
+      "types": "./src/bootstrap.tsx",
+      "import": "./src/bootstrap.tsx"
+    },
+    "./client-auth": {
+      "types": "./src/auth.client.ts",
+      "import": "./src/auth.client.ts"
+    },
+    "./server-auth": {
+      "types": "./src/auth.server.ts",
+      "import": "./src/auth.server.ts"
+    },
     "./server": {
       "types": "./src/server.ts",
       "import": "./src/server.ts"
@@ -21,6 +33,8 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
     "typescript": "^5.9.3"
   },

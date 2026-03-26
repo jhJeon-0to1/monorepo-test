@@ -1,4 +1,5 @@
-import { initCore, testFetch } from "@repo/core";
+import { testFetch } from "@repo/core";
+import { initCore } from "@repo/core";
 
 initCore("a");
 
