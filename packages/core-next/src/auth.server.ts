@@ -1,6 +1,5 @@
 import "server-only";
 
-import * as api from "@repo/core/api";
 import { cookies } from "next/headers";
 
 const AUTH_COOKIE_NAMES = ["session", "access_token", "refresh_token"] as const;
@@ -65,24 +64,17 @@ function withServerAuthHeaders(args: unknown[], cookieHeader: string) {
   return nextArgs;
 }
 
-export const authApi = new Proxy(api, {
-  get(target, prop, receiver) {
-    const originalValue = Reflect.get(target, prop, receiver);
+type AsyncRequestFunction = (...args: unknown[]) => Promise<unknown>;
 
-    if (typeof originalValue === "function") {
-      const requestFunction = originalValue as (...args: unknown[]) => unknown;
+export function withServerAuth<TRequestFunction extends AsyncRequestFunction>(
+  requestFunction: TRequestFunction,
+): TRequestFunction {
+  return (async (...args: Parameters<TRequestFunction>) => {
+    const cookieStore = await cookies();
+    const cookieHeader = createAuthCookieHeader(AUTH_COOKIE_NAMES, cookieStore);
 
-      return async (...args: unknown[]) => {
-        const cookieStore = await cookies();
-        const cookieHeader = createAuthCookieHeader(
-          AUTH_COOKIE_NAMES,
-          cookieStore,
-        );
-
-        return requestFunction(...withServerAuthHeaders(args, cookieHeader));
-      };
-    }
-
-    return originalValue;
-  },
-}) as typeof api;
+    return requestFunction(
+      ...(withServerAuthHeaders(args, cookieHeader) as Parameters<TRequestFunction>),
+    );
+  }) as TRequestFunction;
+}

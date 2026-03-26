@@ -15,14 +15,6 @@
     "./server-auth": {
       "types": "./src/auth.server.ts",
       "import": "./src/auth.server.ts"
-    },
-    "./server": {
-      "types": "./src/server.ts",
-      "import": "./src/server.ts"
-    },
-    "./client": {
-      "types": "./src/client.ts",
-      "import": "./src/client.ts"
     }
   },
   "dependencies": {

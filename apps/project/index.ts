@@ -1,5 +1,5 @@
-import { testFetch } from "@repo/core";
-import { initCore } from "@repo/core";
+import { type AppError, initCore } from "@repo/core";
+import { testFetch } from "@repo/core/api/test";
 
 initCore("a");
 
@@ -9,6 +9,7 @@ initCore("a");
 
     document.body.innerText = JSON.stringify(data);
   } catch (error) {
-    alert(error.message);
+    const appError = error as AppError;
+    alert(appError.message);
   }
 })();

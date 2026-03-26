@@ -1,4 +1,4 @@
-import { testFetch } from "@repo/core-next/server";
+import { testFetch } from "@repo/core/api/test";
 
 export default async function Home() {
   const data = await testFetch();

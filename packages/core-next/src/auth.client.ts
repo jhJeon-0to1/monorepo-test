@@ -1,7 +1,5 @@
 "use client";
 
-import * as api from "@repo/core/api";
-
 type RequestOptionsLike = {
   credentials?: RequestCredentials;
 };
@@ -30,18 +28,14 @@ function withClientAuthOptions(args: unknown[]) {
   return nextArgs;
 }
 
-export const authApi = new Proxy(api, {
-  get(target, prop, receiver) {
-    const originalValue = Reflect.get(target, prop, receiver);
+type AsyncRequestFunction = (...args: unknown[]) => Promise<unknown>;
 
-    if (typeof originalValue === "function") {
-      const requestFunction = originalValue as (...args: unknown[]) => unknown;
-
-      return (...args: unknown[]) => {
-        return requestFunction(...withClientAuthOptions(args));
-      };
-    }
-
-    return originalValue;
-  },
-}) as typeof api;
+export function withClientAuth<TRequestFunction extends AsyncRequestFunction>(
+  requestFunction: TRequestFunction,
+): TRequestFunction {
+  return ((...args: Parameters<TRequestFunction>) => {
+    return requestFunction(
+      ...(withClientAuthOptions(args) as Parameters<TRequestFunction>),
+    );
+  }) as TRequestFunction;
+}

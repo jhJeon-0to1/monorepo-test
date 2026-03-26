@@ -21,5 +21,3 @@ export const coreFetch: CoreFetchFunction = async <T = unknown>(
     ...rest,
   });
 };
-
-export * as test from "./api/test";
