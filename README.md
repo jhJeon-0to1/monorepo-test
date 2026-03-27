@@ -15,12 +15,12 @@
 - 현재 `initCore()`는 module-scoped state를 사용합니다.
 - 그래서 `siteId`와 `baseUrl`이 앱 단위로 고정되는 구조를 전제로 합니다.
 - 고객사별로 앱이 아예 분리 배포되거나, 앱 하나가 사실상 고정 설정으로 운영되는 경우에는 지금 구조로 충분합니다.
+- 현재 이 레포는 그 전제를 따르고 있으므로, `initCore()`는 가장 단순하고 유지비가 낮은 선택으로 봅니다.
 - 하나의 서버 프로세스가 요청마다 다른 `siteId`를 처리하는 진짜 멀티테넌트 구조로 가면, 이 초기화 방식은 나중에 바꿔야 합니다.
 
 ## 폴더 구조
 
-- `apps/web`: Next.js App Router 예제 앱
-- `apps/next`: Next.js 예제 앱
+- `apps/web`: Next.js App Router 기준 앱
 - `apps/project`: Vite 예제 앱
 - `packages/core`: 프레임워크 비의존 fetch, request, error, core API
 - `packages/core-react`: React Query provider, query client, client auth wrapper
@@ -352,9 +352,11 @@ packages/core/src/api/some-domain.ts
 
 ## 주의사항
 
-### `initCore()`는 전역 상태입니다
+### `initCore()`는 현재 전제에서 사용하는 전역 초기화입니다
 
 현재 `initCore()`는 내부 module state를 수정합니다.
+
+현재처럼 앱 단위로 설정이 고정인 구조에서는 이 방식이 단순하고 충분합니다.
 
 즉, 이 구조는 다음 케이스에 적합합니다.
 
@@ -416,5 +418,5 @@ const data = await testFetch();
 - API 함수는 `@repo/core/api/*`에서 직접 import
 - React 공통 기능은 `@repo/core-react`
 - Next.js용 facade는 `@repo/core-next`
-- `CoreBootstrap`은 현재 싱글 설정 전제에서 사용
+- `CoreBootstrap`과 `initCore()`는 현재 고정 설정 앱 전제에서 사용
 - 멀티테넌트 단일 앱 요구가 생기기 전까지는 지금 구조를 유지

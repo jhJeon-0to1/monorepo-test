@@ -19,6 +19,8 @@ type NextFetchOptions = {
 type CoreRequestInit = RequestInit & {
   next?: NextFetchOptions;
 };
+export type AuthMode = "auto" | "none";
+
 export type RequestParamValue = Primitive | Primitive[];
 
 export type RequestParams = Record<string, RequestParamValue>;
@@ -41,6 +43,7 @@ export type RequestOptions = Omit<CoreRequestInit, "body" | "headers" | "method"
   headers?: RequestHeaders;
   baseUrl?: string;
   siteId?: string;
+  auth?: AuthMode;
 };
 
 function buildQueryString(params: RequestParams) {
@@ -73,6 +76,10 @@ function buildQueryString(params: RequestParams) {
 
 function isAbsoluteUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
+}
+
+function isBrowser() {
+  return typeof window !== "undefined";
 }
 
 function isFormData(value: RequestData | undefined): value is FormData {
@@ -120,6 +127,18 @@ function buildUrl(url: string, params?: RequestParams, baseUrl?: string) {
   return `${baseUrl}${url}${query}`;
 }
 
+function shouldAttachAuth(
+  requestUrl: string,
+  baseUrl: string | undefined,
+  auth: AuthMode,
+) {
+  if (auth === "none" || !baseUrl) {
+    return false;
+  }
+
+  return new URL(requestUrl).origin === new URL(baseUrl).origin;
+}
+
 function createBody(method: RequestOptions["method"], data: RequestData | undefined) {
   if (method === "GET" || method === "DELETE" || data === undefined) {
     return undefined;
@@ -165,9 +184,25 @@ async function parseResponse<T>(response: Response): Promise<T | ErrorResponse |
 }
 
 export async function executeRequest<T>(options: RequestOptions): Promise<T> {
-  const { method, url, params, data, headers, baseUrl, siteId, ...init } = options;
+  const {
+    method,
+    url,
+    params,
+    data,
+    headers,
+    baseUrl,
+    siteId,
+    auth = "auto",
+    ...init
+  } = options;
   const resolvedSiteId = resolveSiteId(siteId);
-  const requestUrl = buildUrl(url, params, baseUrl ?? getCoreConfig().baseUrl);
+  const resolvedBaseUrl = baseUrl ?? getCoreConfig().baseUrl;
+  const requestUrl = buildUrl(url, params, resolvedBaseUrl);
+  const credentials =
+    init.credentials ??
+    (isBrowser() && shouldAttachAuth(requestUrl, resolvedBaseUrl, auth)
+      ? "include"
+      : undefined);
 
   let response: Response;
 
@@ -175,6 +210,7 @@ export async function executeRequest<T>(options: RequestOptions): Promise<T> {
     response = await fetch(requestUrl, {
       ...init,
       method,
+      credentials,
       headers: createHeaders(resolvedSiteId, data, headers),
       body: createBody(method, data),
     });
