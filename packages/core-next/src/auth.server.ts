@@ -2,7 +2,15 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-const AUTH_COOKIE_NAMES = ["session", "access_token", "refresh_token"] as const;
+const DEFAULT_AUTH_COOKIE_NAMES = [
+  "session",
+  "access_token",
+  "refresh_token",
+] as const;
+
+export type WithServerAuthOptions = {
+  authCookieNames?: readonly string[];
+};
 
 type RequestOptionsLike = {
   headers?: HeadersInit;
@@ -68,10 +76,13 @@ type AsyncRequestFunction = (...args: unknown[]) => Promise<unknown>;
 
 export function withServerAuth<TRequestFunction extends AsyncRequestFunction>(
   requestFunction: TRequestFunction,
+  options: WithServerAuthOptions = {},
 ): TRequestFunction {
+  const { authCookieNames = DEFAULT_AUTH_COOKIE_NAMES } = options;
+
   return (async (...args: Parameters<TRequestFunction>) => {
     const cookieStore = await cookies();
-    const cookieHeader = createAuthCookieHeader(AUTH_COOKIE_NAMES, cookieStore);
+    const cookieHeader = createAuthCookieHeader(authCookieNames, cookieStore);
 
     return requestFunction(
       ...(withServerAuthHeaders(args, cookieHeader) as Parameters<TRequestFunction>),

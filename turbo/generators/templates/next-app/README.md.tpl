@@ -1,6 +1,6 @@
-# web
+# [[APPNAME]]
 
-`apps/web`은 monorepo generator로 만든 Next.js 앱입니다. `create-next-app` 기본 scaffold 위에 공용 설정과 core wiring이 이미 연결되어 있습니다.
+`[[APP_PATH]]`는 monorepo generator로 만든 Next.js 앱입니다. `create-next-app` 기본 scaffold 위에 공용 설정과 core wiring이 이미 연결되어 있습니다.
 
 ## 빠른 시작
 
@@ -8,29 +8,36 @@
 
 ```bash
 pnpm install
-pnpm --filter "./apps/web" dev
+pnpm --filter "./apps/[[APPNAME]]" dev
 ```
 
 자주 쓰는 명령:
 
 ```bash
-pnpm --filter "./apps/web" lint
-pnpm --filter "./apps/web" check-types
-pnpm --filter "./apps/web" build
+pnpm --filter "./apps/[[APPNAME]]" lint
+pnpm --filter "./apps/[[APPNAME]]" check-types
+pnpm --filter "./apps/[[APPNAME]]" build
 ```
+
+## 환경 변수
+
+generator가 `[[ENV_FILE_PATH]]`를 같이 만들었습니다.
+
+```env
+[[ENV_SNIPPET]]
+```
+
+- `[[SITE_ID_ENV_KEY]]`: 현재 값은 `[[SITE_ID]]`
+- `[[BASE_URL_ENV_KEY]]`: 현재 값은 `[[BASE_URL]]`
 
 ## 기본 연결
 
-- `apps/web/app/layout.tsx`: `CoreBootstrap`와 `Providers`를 연결합니다.
-- `apps/web/app/providers.tsx`: `AppProviders`와 전역 query 에러 핸들러를 연결합니다.
-- `apps/web/app/page.tsx`: 첫 페이지 예시입니다.
-- `apps/web/app/global-error.tsx`: 전역 에러 UI입니다.
+- `[[LAYOUT_PATH]]`: `CoreBootstrap`와 `Providers`를 연결합니다.
+- `[[PROVIDERS_PATH]]`: `AppProviders`와 전역 query 에러 핸들러를 연결합니다.
+- `[[PAGE_PATH]]`: 첫 페이지 예시입니다.
+- `[[GLOBAL_ERROR_PATH]]`: 전역 에러 UI입니다.
 
-상대 경로 API를 공통으로 쓰실 계획이면 `CoreBootstrap`에 `baseUrl`도 같이 넘겨주세요.
-
-```tsx
-<CoreBootstrap siteId="a" baseUrl="https://api.example.com" />
-```
+지금 layout은 이미 `process.env.[[SITE_ID_ENV_KEY]]`와 `process.env.[[BASE_URL_ENV_KEY]]`를 읽도록 연결되어 있습니다. 보통은 `.env.local` 값만 바꾸시면 됩니다.
 
 ## API 사용 규칙
 
@@ -108,4 +115,4 @@ const data = await authTestFetch();
 
 ## 더 보기
 
-공통 규칙과 패키지 구조는 [루트 README](../../README.md)를 참고해주세요.
+공통 규칙과 패키지 구조는 [루트 README]([[ROOT_README_PATH]])를 참고해주세요.
