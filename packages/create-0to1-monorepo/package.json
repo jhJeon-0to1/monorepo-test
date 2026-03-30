@@ -1,0 +1,24 @@
+{
+  "name": "create-0to1-monorepo",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "create-0to1-monorepo": "./bin/create-0to1-monorepo.js"
+  },
+  "files": [
+    "README.md",
+    "bin",
+    "lib",
+    "scripts",
+    "template"
+  ],
+  "scripts": {
+    "prepack": "node ./scripts/prepare-template.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
